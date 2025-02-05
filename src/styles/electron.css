@@ -1,0 +1,51 @@
+.titlebar-drag-region {
+  -webkit-app-region: drag;
+  app-region: drag;
+  z-index: 100;
+}
+
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.window-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.window-control-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.window-control-button::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  position: absolute;
+}
+
+.window-control-minimize::before {
+  background: #f1c40f;
+}
+
+.window-control-maximize::before {
+  background: #2ecc71;
+}
+
+.window-control-close::before {
+  background: #e74c3c;
+}
+
+.window-control-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

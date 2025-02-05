@@ -1,0 +1,38 @@
+{
+  "appId": "com.flowtimeapp",
+  "publish": {
+    "provider": "github",
+    "owner": "cipp-ashe",
+    "repo": "focus-motivate-surge"
+  },
+  "productName": "FlowTime",
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "win": {
+    "target": "nsis",
+    "icon": "build/icon.ico",
+    "signingHashAlgorithms": null,
+    "signAndEditExecutable": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "shortcutName": "FlowTime"
+  },
+  "mac": {
+    "target": "dmg",
+    "icon": "build/icon.png"
+  },
+  "linux": {
+    "target": "AppImage",
+    "icon": "build/icon.png"
+  }
+}

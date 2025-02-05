@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50;
+  }
+}
+
+@layer components {
+  .component-demo {
+    @apply p-6 bg-white rounded-lg shadow-md mb-8;
+  }
+
+  .code-block {
+    @apply bg-gray-800 text-white p-4 rounded-md my-4 overflow-x-auto;
+  }
+
+  .explanation {
+    @apply text-gray-600 mt-2 text-sm;
+  }
+}

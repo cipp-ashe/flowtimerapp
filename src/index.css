@@ -1,0 +1,169 @@
+@import './styles/electron.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@layer utilities {
+  .animate-gradient {
+    animation: gradient 15s ease infinite;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-muted-foreground\/20::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.2);
+    border-radius: 6px;
+  }
+  
+  .hover\:scrollbar-thumb-muted-foreground\/30:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+  }
+  
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 225 25% 95%;
+    --foreground: 225 25% 10%;
+    --card: 225 25% 98%;
+    --card-foreground: 225 25% 10%;
+    --popover: 225 25% 98%;
+    --popover-foreground: 225 25% 10%;
+    --primary: 280 85% 60%;
+    --primary-foreground: 225 25% 98%;
+    --secondary: 225 25% 90%;
+    --secondary-foreground: 225 25% 10%;
+    --muted: 225 25% 90%;
+    --muted-foreground: 225 25% 40%;
+    --accent: 280 85% 60%;
+    --accent-foreground: 225 25% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 225 25% 98%;
+    --border: 225 25% 85%;
+    --input: 225 25% 85%;
+    --ring: 280 85% 60%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 225 25% 12%;
+    --foreground: 225 25% 98%;
+    --card: 225 25% 15%;
+    --card-foreground: 225 25% 98%;
+    --popover: 225 25% 15%;
+    --popover-foreground: 225 25% 98%;
+    --primary: 280 85% 60%;
+    --primary-foreground: 225 25% 98%;
+    --secondary: 225 25% 25%;
+    --secondary-foreground: 225 25% 98%;
+    --muted: 225 25% 25%;
+    --muted-foreground: 225 25% 60%;
+    --accent: 280 85% 60%;
+    --accent-foreground: 225 25% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 225 25% 98%;
+    --border: 225 25% 30%;
+    --input: 225 25% 30%;
+    --ring: 280 85% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground overflow-x-hidden;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    @apply overflow-x-hidden;
+  }
+}
+
+@keyframes countdown {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 100;
+  }
+}
+
+.timer-circle {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.quote-container {
+  transition: opacity 2s ease-in-out;
+}
+
+.quote-card {
+  transition: opacity 2s ease-in-out;
+}
+
+.timer-expand-enter {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+.timer-expand-enter-active {
+  transform: scale(1);
+  opacity: 1;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.timer-circle {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: all 0.3s ease;
+}
+
+.timer-circle.active {
+  filter: drop-shadow(0 0 10px hsl(var(--primary)));
+}
+
+.task-list-item {
+  @apply transform transition-all duration-200 hover:scale-102 hover:translate-x-1;
+}
+
+.completed-task-enter {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.completed-task-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
