@@ -122,6 +122,7 @@ export const Timer = ({
   }, [cornerMode, timerState.viewMode]);
 
   const handleEnterCornerMode = React.useCallback(() => {
+    console.log("handleEnterCornerMode called");
     previousViewModeRef.current = timerState.viewMode;
     setTimerState(prev => ({ ...prev, viewMode: 'corner' }));
   }, [timerState.viewMode]);
@@ -376,15 +377,17 @@ export const Timer = ({
           </div>
 
           <div className="fixed top-6 right-6 flex items-center gap-2 z-[102]">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleEnterCornerMode}
-              className="p-2 text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-110"
-              title="Switch to corner view"
-            >
-              <ArrowLeftRight className="h-5 w-5" />
-            </Button>
+            {typeof window !== 'undefined' && typeof process !== 'undefined' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {}}
+                className="p-2 text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-110"
+                title="Switch to corner view"
+              >
+                <ArrowLeftRight className="h-5 w-5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
