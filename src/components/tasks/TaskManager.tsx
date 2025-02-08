@@ -1,10 +1,13 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { TaskList, Task } from "./TaskList";
 import { TaskLayout } from "./TaskLayout";
 import { TimerSection } from "../timer/TimerSection";
 import { Quote } from "@/types/timer";
 import { useTaskOperations } from "@/hooks/useTaskOperations";
 import { toast } from "sonner";
+import { useSearchParams } from "react-router-dom";
+// Import generateId from TaskInput.tsx – ensure that TaskInput exports generateId
+import { generateId } from "./TaskInput";
 
 interface TaskManagerProps {
   initialTasks?: Task[];
@@ -23,8 +26,7 @@ export const TaskManager = ({
   onCompletedTasksUpdate,
   onFavoritesChange,
 }: TaskManagerProps) => {
-  const [favorites, setFavorites] = useState<Quote[]>(initialFavorites);
-  
+  const [favorites, setFavorites] = useState(initialFavorites);
   const {
     tasks,
     setTasks,
@@ -43,27 +45,51 @@ export const TaskManager = ({
     onCompletedTasksUpdate,
   });
 
+  // URL-based task addition logic:
+  const [searchParams] = useSearchParams();
+  const [hasProcessedURLTask, setHasProcessedURLTask] = useState(false);
+
+  useEffect(() => {
+    if (hasProcessedURLTask) return;
+
+    // Expect URL format: ?newTask=Task%20Name,duration
+    const newTaskParam = searchParams.get("newTask");
+    if (newTaskParam) {
+      const [taskName, durationStr] = newTaskParam.split(",").map(s => s.trim());
+      const duration = parseInt(durationStr, 10) || 25; // Default to 25 minutes if parsing fails
+      if (taskName) {
+        handleTaskAdd({
+          id: generateId(),
+          name: taskName,
+          completed: false,
+          duration,
+        });
+      }
+      setHasProcessedURLTask(true);
+    }
+  }, [searchParams, hasProcessedURLTask, handleTaskAdd]);
+
   const handleFavoritesChange = (newFavorites: Quote[]) => {
-    console.log('Updating favorites:', newFavorites.length);
+    console.log("Updating favorites:", newFavorites.length);
     setFavorites(newFavorites);
     onFavoritesChange?.(newFavorites);
   };
 
   const handleSummaryEmailSent = useCallback(() => {
-    console.log('Sending summary email and clearing completed tasks');
+    console.log("Sending summary email and clearing completed tasks");
     setCompletedTasks([]);
     onCompletedTasksUpdate?.([]);
     toast.success("Summary sent ✨");
   }, [onCompletedTasksUpdate, setCompletedTasks]);
 
   const handleTaskDurationChange = useCallback((minutes: number) => {
-    console.log('Updating task duration:', minutes);
+    console.log("Updating task duration:", minutes);
     if (selectedTask) {
-      setTasks(prev => prev.map(task =>
-        task.id === selectedTask.id
-          ? { ...task, duration: minutes }
-          : task
-      ));
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === selectedTask.id ? { ...task, duration: minutes } : task
+        )
+      );
     }
   }, [selectedTask, setTasks]);
 
@@ -79,7 +105,17 @@ export const TaskManager = ({
       favorites={favorites}
       onTasksUpdate={onTasksUpdate}
     />
-  ), [tasks, completedTasks, handleTaskAdd, handleTaskSelect, handleTasksClear, handleSelectedTasksClear, handleSummaryEmailSent, favorites, onTasksUpdate]);
+  ), [
+    tasks,
+    completedTasks,
+    handleTaskAdd,
+    handleTaskSelect,
+    handleTasksClear,
+    handleSelectedTasksClear,
+    handleSummaryEmailSent,
+    favorites,
+    onTasksUpdate,
+  ]);
 
   const timerComponent = useMemo(() => (
     <TimerSection
@@ -89,7 +125,13 @@ export const TaskManager = ({
       favorites={favorites}
       setFavorites={handleFavoritesChange}
     />
-  ), [selectedTask, handleTaskComplete, handleTaskDurationChange, favorites, handleFavoritesChange]);
+  ), [
+    selectedTask,
+    handleTaskComplete,
+    handleTaskDurationChange,
+    favorites,
+    handleFavoritesChange,
+  ]);
 
   return (
     <TaskLayout
@@ -99,4 +141,4 @@ export const TaskManager = ({
   );
 };
 
-TaskManager.displayName = 'TaskManager';
+TaskManager.displayName = "TaskManager";
