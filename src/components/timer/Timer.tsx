@@ -1,5 +1,7 @@
 import * as React from "react";
 import type { TimerState as ElectronTimerState } from "@/types/electron";
+import type { CornerTimerViewProps } from "./views/CornerTimerView";
+import type { TimerCircleProps } from "@/types/timer";
 
 type ViewMode = 'compact' | 'expanded' | 'corner';
 
@@ -9,6 +11,7 @@ interface LocalTimerState {
   minutes: number;
   isRunning: boolean;
   pauseTimeLeft: number;
+  isStateLoaded: boolean; // Add isStateLoaded to the state
 }
 import { useAudio } from "@/hooks/useAudio";
 import { useTimerState } from "@/hooks/timer/useTimerState";
@@ -32,12 +35,12 @@ interface ExtendedTimerProps {
   duration: number;
   taskName: string;
   cornerMode?: boolean;
-  
+
   // Callbacks
   onComplete: (metrics: TimerStateMetrics) => void;
   onAddTime: () => void;
   onDurationChange?: (minutes: number) => void;
-  
+
   // Quotes management
   favorites: Quote[];
   setFavorites: React.Dispatch<React.SetStateAction<Quote[]>>;
@@ -67,9 +70,10 @@ export const Timer = ({
     selectedSound: "bell",
     minutes: duration ? Math.floor(duration / 60) : 25,
     isRunning: false,
-    pauseTimeLeft: 0
+    pauseTimeLeft: 0,
+    isStateLoaded: !cornerMode
   });
-  
+
 
   const previousViewModeRef = React.useRef<'compact' | 'expanded' | 'corner'>(timerState.viewMode);
   const [showCompletion, setShowCompletion] = React.useState(false);
@@ -116,6 +120,19 @@ export const Timer = ({
       }));
     }
   }, [cornerMode, timerState.viewMode]);
+
+  const handleEnterCornerMode = React.useCallback(() => {
+    previousViewModeRef.current = timerState.viewMode;
+    setTimerState(prev => ({ ...prev, viewMode: 'corner' }));
+  }, [timerState.viewMode]);
+
+  const handleExitCornerMode = React.useCallback(() => {
+    setTimerState(prev => ({
+      ...prev,
+      viewMode: previousViewModeRef.current === 'corner' ? 'compact' : previousViewModeRef.current
+    }));
+  }, []);
+
 
   const { play: playSound, testSound, isLoadingAudio } = useAudio({
     audioUrl: SOUND_OPTIONS[timerState.selectedSound],
@@ -236,18 +253,18 @@ export const Timer = ({
 
   const handleCloseCompletion = React.useCallback(() => {
     if (!completionMetrics) return;
-    
+
     if (typeof onComplete === 'function') {
       onComplete(completionMetrics);
     }
-    
+
     setShowCompletion(false);
     setTimerState(prev => ({
       ...prev, viewMode: 'compact'
     }));
     setCompletionMetrics(null);
     resetTimer();
-    
+
     toast.success("Task completed! You're crushing it! 🎯🎉");
   }, [onComplete, completionMetrics, resetTimer]);
 
@@ -263,7 +280,7 @@ export const Timer = ({
   React.useEffect(() => {
     const handleTimerStateUpdate = (event: CustomEvent<ElectronTimerState>) => {
       const state = event.detail;
-      
+
       // Update metrics first to ensure proper state
       if (state.metrics) {
         const updatedMetrics = {
@@ -289,92 +306,32 @@ export const Timer = ({
       }
     };
 
-    window.addEventListener('timer-state-update', handleTimerStateUpdate as EventListener);
-    return () => {
-      window.removeEventListener('timer-state-update', handleTimerStateUpdate as EventListener);
-    };
-  }, [start, pause, setMinutes, isRunning]);
-
-  const handleEnterCornerMode = React.useCallback(async () => {
-    try {
-      const stateToSync = {
-        isRunning: timerState.isRunning,
-        timeLeft,
-        minutes,
-        metrics
+    if (cornerMode) { // Only add listener in cornerMode
+      window.addEventListener('timer-state-update', handleTimerStateUpdate as EventListener);
+      return () => {
+        window.removeEventListener('timer-state-update', handleTimerStateUpdate as EventListener);
       };
-      await window.electron.enterCornerMode(stateToSync);
-      previousViewModeRef.current = timerState.viewMode;
+    } else {
+      setTimerState(prev => ({ ...prev, isStateLoaded: true })); // For non-corner mode, state is immediately loaded
+    }
+  }, [start, pause, setMinutes, isRunning, cornerMode]);
+
+  const timerCirclePropsOnClick = () => {
+    if (isRunning || metrics.isPaused) {
       setTimerState(prev => ({
-        ...prev, viewMode: 'corner'
+        ...prev, viewMode: 'expanded'
       }));
-    } catch (error) {
-      console.error('Error entering corner mode:', error);
-      toast.error("Failed to enter corner mode ⚠️");
     }
-  }, [timerState.viewMode, timerState.isRunning, timeLeft, minutes, metrics]);
+  };
 
-  // Sync timer state between windows when in corner mode
-  React.useEffect(() => {
-    let syncInterval: NodeJS.Timeout;
-    let initialSyncTimeout: NodeJS.Timeout;
-
-    if (cornerMode) {
-      const syncState = () => {
-        window.electron.syncTimerState({
-          isRunning,
-          timeLeft,
-          minutes,
-          metrics
-        });
-      };
-
-      // Initial sync with delay to ensure proper initialization
-      initialSyncTimeout = setTimeout(() => {
-        syncState();
-        
-        // Set up periodic sync every 100ms while running
-        if (isRunning) {
-          syncInterval = setInterval(syncState, 100);
-        }
-      }, 100);
-    }
-
-    return () => {
-      if (syncInterval) {
-        clearInterval(syncInterval);
-      }
-      if (initialSyncTimeout) {
-        clearTimeout(initialSyncTimeout);
-      }
-    };
-  }, [cornerMode, isRunning, timeLeft, minutes, metrics]);
-
-  const handleExitCornerMode = React.useCallback(async () => {
-    try {
-      await window.electron.exitCornerMode();
-      const nextView = previousViewModeRef.current === 'corner' ? 'compact' : previousViewModeRef.current;
-      setTimerState(prev => ({
-        ...prev, viewMode: nextView
-      }));
-    } catch (error) {
-      console.error('Error exiting corner mode:', error);
-      toast.error("Failed to exit corner mode ⚠️");
-    }
-  }, []);
-
-  const timerCircleProps = {
+  const timerCircleProps: CornerTimerViewProps['timerCircleProps'] = {
     isRunning,
     timeLeft,
     minutes,
     circumference: CIRCLE_CIRCUMFERENCE,
-    onClick: () => {
-      if (isRunning || metrics.isPaused) {
-        setTimerState(prev => ({
-          ...prev, viewMode: 'expanded'
-        }));
-      }
-    }
+    onClick: timerCirclePropsOnClick,
+    isStateLoaded: timerState.isStateLoaded,
+    ...(timerState.viewMode !== 'corner' ? { onClick: timerCirclePropsOnClick } : {}), // Conditionally add onClick
   };
 
   const timerControlsProps = {
@@ -410,54 +367,56 @@ export const Timer = ({
 
       {timerState.viewMode === 'expanded' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
-        {/* Fixed background with backdrop blur */}
-        <div className="fixed inset-0 bg-background/95 backdrop-blur-md transition-opacity duration-300" />
-        
-        {/* Floating quotes container */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <FloatingQuotes favorites={favorites} />
-        </div>
+          {/* Fixed background with backdrop blur */}
+          <div className="fixed inset-0 bg-background/95 backdrop-blur-md transition-opacity duration-300" />
 
-        <div className="fixed top-6 right-6 flex items-center gap-2 z-[102]">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleEnterCornerMode}
-            className="p-2 text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-110"
-            title="Switch to corner view"
-          >
-            <ArrowLeftRight className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTimerState(prev => ({
+          {/* Floating quotes container */}
+          <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            <FloatingQuotes favorites={favorites} />
+          </div>
+
+          <div className="fixed top-6 right-6 flex items-center gap-2 z-[102]">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleEnterCornerMode}
+              className="p-2 text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-110"
+              title="Switch to corner view"
+            >
+              <ArrowLeftRight className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTimerState(prev => ({
+                ...prev, viewMode: 'compact'
+              }))}
+              className="p-2 text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-110"
+              title="Switch to compact view"
+            >
+              <Minimize2 className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <TimerExpandedView
+            ref={expandedViewRef}
+            taskName={taskName}
+            timerCircleProps={timerCircleProps}
+            timerControlsProps={{
+              ...timerControlsProps,
+              size: "large",
+              onToggle: () => handleToggle(true)
+            }}
+            metrics={metrics}
+            onClose={() => setTimerState(prev => ({
               ...prev, viewMode: 'compact'
             }))}
-            className="p-2 text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-110"
-            title="Switch to compact view"
-          >
-            <Minimize2 className="h-5 w-5" />
-          </Button>
-        </div>
-
-        <TimerExpandedView
-          ref={expandedViewRef}
-          taskName={taskName}
-          timerCircleProps={timerCircleProps}
-          timerControlsProps={{
-            ...timerControlsProps,
-            size: "large",
-            onToggle: () => handleToggle(true)
-          }}
-          metrics={metrics}
-          onClose={() => setTimerState(prev => ({
-            ...prev, viewMode: 'compact'
-          }))}
-          onLike={incrementFavorites}
-          favorites={favorites}
-          setFavorites={setFavorites}
-        />
+            onLike={incrementFavorites}
+            favorites={favorites}
+            setFavorites={setFavorites}
+            handleEnterCornerMode={handleEnterCornerMode} // Pass handleEnterCornerMode
+            handleExitCornerMode={handleExitCornerMode} // Pass handleExitCornerMode
+          />
         </div>
       )}
 
@@ -466,7 +425,7 @@ export const Timer = ({
           <TimerCompactView
             taskName={taskName}
             timerCircleProps={timerCircleProps}
-            timerControlsProps={{...timerControlsProps, size: "normal"}}
+            timerControlsProps={{ ...timerControlsProps, size: "normal" }}
             metrics={metrics}
             internalMinutes={timerState.minutes}
             onMinutesChange={handleMinutesChange}
