@@ -4,7 +4,7 @@ import { TimerCircleProps } from "@/types/timer";
 
 interface TimerDisplayProps {
   circleProps: Omit<TimerCircleProps, "size">;
-  size: "normal" | "large";
+  size: "small" | "normal" | "large";
   onClick?: () => void;
   isRunning: boolean;
 }

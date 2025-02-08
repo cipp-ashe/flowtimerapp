@@ -15,7 +15,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
-    "electron:dev": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"electron .\"",
+    "electron:dev": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"wait-on tcp:5173 && electron .\"",
     "electron:build": "npm run build && electron-builder",
     "electron:preview": "npm run build && electron ."
   },
@@ -105,7 +105,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "typescript-eslint": "^0.0.1-alpha.0",
-    "vite": "^5.0.12"
+    "vite": "^5.0.12",
+    "wait-on": "^8.0.2"
   },
   "peerDependencies": {
     "react": "^18.2.0",

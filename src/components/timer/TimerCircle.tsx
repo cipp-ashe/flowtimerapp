@@ -87,9 +87,17 @@ export const TimerCircle = memo(({
     };
   }, []);
 
-  const sizeClasses = size === 'large' 
-    ? 'w-48 h-48 sm:w-56 sm:h-56' 
-    : 'w-48 h-48';
+  const sizeClasses = {
+    small: 'w-24 h-24',
+    normal: 'w-48 h-48',
+    large: 'w-48 h-48 sm:w-56 sm:h-56'
+  }[size];
+
+  const textSizeClasses = {
+    small: 'text-xl',
+    normal: 'text-2xl sm:text-3xl',
+    large: 'text-4xl sm:text-5xl'
+  }[size];
 
   return (
     <div 
@@ -132,7 +140,7 @@ export const TimerCircle = memo(({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span 
           ref={textRef}
-          className={`font-mono font-bold ${size === 'large' ? 'text-4xl sm:text-5xl' : 'text-2xl sm:text-3xl'}`}
+          className={`font-mono font-bold ${textSizeClasses}`}
           style={prefersReducedMotion ? { transition: 'none' } : undefined}
         >
           {formatTime(timeLeft)}

@@ -19,6 +19,8 @@ interface UseTimerReturn {
   addTime: (minutes: number) => void;
   setMinutes: (minutes: number) => void;
   completeTimer: () => void;
+  updateMetrics: (newMetrics: Partial<TimerMetrics>) => void;
+  setMetrics: React.Dispatch<React.SetStateAction<TimerMetrics>>;
 }
 
 export const useTimer = ({
@@ -49,22 +51,20 @@ export const useTimer = ({
   const isMountedRef = useRef(true);
   const intervalRef = useRef<NodeJS.Timeout>();
 
-  // Handle duration updates
+  // Handle initial duration setup only on mount
   useEffect(() => {
     if (!isMountedRef.current) return;
 
     const validDuration = Math.max(60, initialDuration); // Minimum 1 minute
-    setTimeLeft(validDuration);
-    setMinutesState(Math.floor(validDuration / 60));
-    setMetrics(prev => ({
-      ...prev,
-      expectedTime: validDuration
-    }));
-
-    return () => {
-      setIsRunning(false);
-    };
-  }, [initialDuration]);
+    if (!isRunning) {
+      setTimeLeft(validDuration);
+      setMinutesState(Math.floor(validDuration / 60));
+      setMetrics(prev => ({
+        ...prev,
+        expectedTime: validDuration
+      }));
+    }
+  }, []); // Only run on mount
 
   const setMinutes = useCallback((newMinutes: number) => {
     if (!isMountedRef.current) return;
@@ -190,6 +190,14 @@ export const useTimer = ({
     };
   }, []);
 
+  const updateMetrics = useCallback((newMetrics: Partial<TimerMetrics>) => {
+    if (!isMountedRef.current) return;
+    setMetrics(prev => ({
+      ...prev,
+      ...newMetrics
+    }));
+  }, []);
+
   return {
     timeLeft,
     minutes,
@@ -201,5 +209,7 @@ export const useTimer = ({
     addTime,
     setMinutes,
     completeTimer,
+    updateMetrics,
+    setMetrics,
   };
 };

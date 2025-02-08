@@ -28,7 +28,6 @@ export const TimerSection = ({
 
   return (
     <Timer
-      key={selectedTask.id}
       duration={selectedTask.duration ? selectedTask.duration * 60 : 1500}
       taskName={selectedTask.name}
       onComplete={onTaskComplete}

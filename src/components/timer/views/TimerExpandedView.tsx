@@ -1,6 +1,5 @@
-import { memo, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import * as React from "react";
 import { Card } from "../../ui/card";
-import { TimerHeader } from "../TimerHeader";
 import { TimerDisplay } from "../TimerDisplay";
 import { TimerControls } from "../controls/TimerControls";
 import { TimerMetricsDisplay } from "../TimerMetrics";
@@ -8,6 +7,8 @@ import { QuoteDisplay } from "../../quotes/QuoteDisplay";
 import { Quote } from "@/types/timer";
 import { TimerStateMetrics } from "@/types/metrics";
 import { NotesEditor } from "../../notes/NotesEditor";
+import { useNotes, type Note } from "@/hooks/useNotes";
+import { CollapsibleNotesList } from "@/components/notes/components/CollapsibleNotesList";
 
 interface TimerExpandedViewProps {
   taskName: string;
@@ -33,7 +34,11 @@ interface TimerExpandedViewProps {
   setFavorites: React.Dispatch<React.SetStateAction<Quote[]>>;
 }
 
-export const TimerExpandedView = memo(({
+export interface TimerExpandedViewRef {
+  saveNotes: () => void;
+}
+
+export const TimerExpandedView = React.memo(React.forwardRef<TimerExpandedViewRef, TimerExpandedViewProps>(({
   taskName,
   timerCircleProps,
   timerControlsProps: originalTimerControlsProps,
@@ -42,8 +47,40 @@ export const TimerExpandedView = memo(({
   onLike,
   favorites,
   setFavorites,
-}) => {
+}, ref) => {
+  const { 
+    notes, 
+    selectedNote, 
+    selectNoteForEdit,
+    currentContent,
+    updateCurrentContent,
+    updateNote,
+    addNote,
+    clearSelectedNote
+  } = useNotes();
+  
   const timerControlsProps = originalTimerControlsProps;
+
+  const handleSave = () => {
+    if (!currentContent.trim()) return;
+
+    if (selectedNote) {
+      updateNote(selectedNote.id, currentContent);
+      clearSelectedNote();
+    } else {
+      addNote();
+      clearSelectedNote();
+    }
+    updateCurrentContent('');
+  };
+
+  React.useImperativeHandle(ref, () => ({
+    saveNotes: () => {
+      if (currentContent.trim()) {
+        handleSave();
+      }
+    }
+  }));
 
   return (
     <div className="relative w-full max-w-[900px] mx-auto px-4 py-4 z-[101] flex flex-col gap-4 h-[90vh] overflow-x-hidden">
@@ -62,7 +99,7 @@ export const TimerExpandedView = memo(({
               {taskName}
             </h1>
           </div>
-          
+        
           <div className="relative">
             <div className="absolute top-2 right-2">
               <TimerMetricsDisplay 
@@ -89,17 +126,31 @@ export const TimerExpandedView = memo(({
       </Card>
 
       <Card className="bg-card/90 backdrop-blur-md shadow-lg border-primary/20 flex-1">
-        <div className="p-4 h-full flex flex-col">
-          <h2 className="text-lg font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">
-            Quick Notes
+        <div className="p-6 h-full flex flex-col">
+          <h2 className="text-lg font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">
+            Task Notes
           </h2>
-          <div className="flex-1">
-            <NotesEditor />
+          <div className="flex-1 overflow-hidden bg-background/50 rounded-lg border border-primary/10 p-4">
+            <div className="h-full flex flex-col gap-6" onClick={e => e.stopPropagation()}>
+              <NotesEditor 
+                selectedNote={selectedNote}
+                content={currentContent}
+                onChange={updateCurrentContent}
+                onSave={handleSave}
+                isEditing={!!selectedNote}
+              />
+              <CollapsibleNotesList 
+                notes={notes}
+                onEditNote={selectNoteForEdit}
+                inExpandedView={true}
+              />
+            </div>
           </div>
         </div>
       </Card>
     </div>
   );
-});
+}));
 
 TimerExpandedView.displayName = 'TimerExpandedView';
+

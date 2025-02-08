@@ -31,7 +31,7 @@ export interface TimerProps {
 }
 
 export interface TimerCircleProps {
-  size: 'normal' | 'large';
+  size: 'small' | 'normal' | 'large';
   isRunning: boolean;
   timeLeft: number;
   minutes: number;
@@ -47,7 +47,7 @@ export interface TimerControlsProps {
   onComplete: () => void;
   onAddTime?: () => void;
   showAddTime?: boolean;
-  size?: 'normal' | 'large';
+  size?: 'small' | 'normal' | 'large';
   toggleButtonA11yProps?: ButtonA11yProps;
   completeButtonA11yProps?: ButtonA11yProps;
   addTimeButtonA11yProps?: ButtonA11yProps;
